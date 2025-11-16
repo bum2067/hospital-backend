@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hospital.schedule.mapper.EmployeeMapper">
+
+    <resultMap id="EmployeeResult" type="com.hospital.schedule.dtos.EmployeeDto">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="role" column="role"/>
+        <result property="nightShiftAvailable" column="night_shift_available"/>
+        <result property="maxWeeklyHours" column="max_weekly_hours"/>
+    </resultMap>
+
+    <select id="findAll" resultMap="EmployeeResult">
+        SELECT * FROM employee ORDER BY id DESC;
+    </select>
+
+    <select id="findById" resultMap="EmployeeResult">
+        SELECT * FROM employee WHERE id = #{id};
+    </select>
+
+    <insert id="insert" parameterType="com.hospital.schedule.dtos.EmployeeRequestDto">
+        INSERT INTO employee (name, role, night_shift_available, max_weekly_hours)
+        VALUES (#{name}, #{role}, #{nightShiftAvailable}, #{maxWeeklyHours});
+    </insert>
+
+    <update id="update" parameterType="com.hospital.schedule.dtos.EmployeeDto">
+        UPDATE employee
+        SET name = #{name},
+            role = #{role},
+            night_shift_available = #{nightShiftAvailable},
+            max_weekly_hours = #{maxWeeklyHours}
+        WHERE id = #{id};
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM employee WHERE id = #{id};
+    </delete>
+
+</mapper>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hospital.schedule.mapper.ShiftMapper">
+
+    <!-- ===========================================================
+         🧩 ResultMap: DB 결과를 ShiftDto로 매핑
+    ============================================================ -->
+    <resultMap id="ShiftResult" type="com.hospital.schedule.dtos.ShiftDto">
+        <id property="id" column="id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="shiftTypeId" column="shift_type_id"/>
+        <result property="workDate" column="work_date"/>
+        <result property="employeeName" column="employee_name"/>
+        <result property="shiftTypeName" column="shift_type_name"/>
+    </resultMap>
+
+    <!-- ===========================================================
+         1️⃣ 모든 근무 조회
+    ============================================================ -->
+    <select id="findAll" resultMap="ShiftResult">
+        SELECT s.id,
+               s.employee_id,
+               s.shift_type_id,
+               s.work_date,
+               e.name AS employee_name,
+               t.name AS shift_type_name
+        FROM shift s
+                 JOIN employee e ON s.employee_id = e.id
+                 JOIN shift_type t ON s.shift_type_id = t.id
+        ORDER BY s.work_date ASC, e.id ASC
+    </select>
+
+    <!-- ===========================================================
+         2️⃣ 직원별 근무 조회
+    ============================================================ -->
+    <select id="findByEmployee" resultMap="ShiftResult" parameterType="long">
+        SELECT s.id,
+               s.employee_id,
+               s.shift_type_id,
+               s.work_date,
+               e.name AS employee_name,
+               t.name AS shift_type_name
+        FROM shift s
+                 JOIN employee e ON s.employee_id = e.id
+                 JOIN shift_type t ON s.shift_type_id = t.id
+        WHERE s.employee_id = #{employeeId}
+        ORDER BY s.work_date ASC
+    </select>
+
+    <!-- ===========================================================
+         3️⃣ 근무 등록
+         ※ Simulated Annealing 결과 삽입용
+         ※ 중복 데이터가 들어오면 덮어씌움 (옵션)
+    ============================================================ -->
+    <insert id="insert" parameterType="com.hospital.schedule.dtos.ShiftRequestDto">
+        INSERT INTO shift (employee_id, shift_type_id, work_date)
+        VALUES (#{employeeId}, #{shiftTypeId}, #{workDate})
+        ON DUPLICATE KEY UPDATE
+            shift_type_id = VALUES(shift_type_id),
+            work_date = VALUES(work_date)
+    </insert>
+
+    <!-- ===========================================================
+         4️⃣ 개별 근무 삭제 (ID 기준)
+    ============================================================ -->
+    <delete id="delete" parameterType="long">
+        DELETE FROM shift WHERE id = #{id}
+    </delete>
+
+    <!-- ===========================================================
+         5️⃣ 특정 기간 + 근무유형 삭제 (선택)
+         ※ 단기 테스트용 or 구간 초기화용
+    ============================================================ -->
+    <delete id="deleteByRangeAndType">
+        DELETE FROM shift
+        WHERE work_date BETWEEN #{start} AND #{end}
+          AND shift_type_id = #{shiftTypeId}
+    </delete>
+
+    <!-- ===========================================================
+         6️⃣ 연도 + 월 단위 전체 삭제
+         ※ 새 스케줄 생성 시 기존 근무표 덮어쓰기용
+         ※ SchedulingService.generateMonthlySchedule() 에서 사용
+    ============================================================ -->
+    <delete id="deleteByMonth" parameterType="map">
+        DELETE FROM shift
+        WHERE YEAR(work_date) = #{year}
+          AND MONTH(work_date) = #{month}
+    </delete>
+    
+    <!-- 오늘 근무 타입 조회 -->
+	<select id="findShift" resultType="long">
+    SELECT shift_type_id
+    FROM shift
+    WHERE employee_id = #{employeeId}
+      AND work_date = #{date}
+	</select>
+
+	<!-- 근무 수정 -->
+	<update id="updateShift">
+    UPDATE shift
+    SET shift_type_id = #{shiftTypeId}
+    WHERE employee_id = #{employeeId}
+      AND work_date = #{date}
+	</update>
+
+
+</mapper>
